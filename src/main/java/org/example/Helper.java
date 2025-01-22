@@ -11,6 +11,7 @@ import java.util.List;
 public class Helper {
     SimpleEval simpleEval = new SimpleEval();
     private Move idMove;
+    public Move [] killerMoves = new Move[1000];
 
     //fetching iterative deepening move
     public void iterativeDeepeningMove(Move move){
@@ -50,14 +51,14 @@ public class Helper {
     }
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
-    public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable){
+    public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply){
         List<MoveInfo> move_scores = new ArrayList<>();
         List<Move> sortedMoves = new ArrayList<>();
 
         for (Move move : legalMoves){
             if(!board.doMove(move)){continue;}
             board.undoMove();
-            MoveInfo moveInfo = new MoveInfo(move,calculateMoveValue(board,move, transpositionTable));
+            MoveInfo moveInfo = new MoveInfo(move,calculateMoveValue(board,move, transpositionTable, ply));
             move_scores.add(moveInfo);
         }
 
@@ -70,12 +71,14 @@ public class Helper {
     }
 
     // Calculating the value of each moves according to MVV-LVA but checking TT moves first + valuing promotions and checks
-    private int calculateMoveValue(Board board, Move move, TranspositionTable transpositionTable){
+    private int calculateMoveValue(Board board, Move move, TranspositionTable transpositionTable, int ply){
         //ID value should always be looked at first
         if (move.equals(idMove)) {
-            return 2000; // Higher than TT moves to ensure it's checked first
+            return 2000;
         }
-
+        if (killerMoves[ply] != null && move.equals(killerMoves[ply])){
+            return 1500;
+        }
         //Transposition value
         if (transpositionTable.containsKey(board.getZobristKey())){
             TranspositionTable.Entry node = transpositionTable.getEntry(board.getZobristKey());
@@ -84,6 +87,7 @@ public class Helper {
                 return 1000 - node.depth;
             }
         }
+
         // Promotion Handling
         if (move.getPromotion() != null) {
             return 900; // Promotions are highly prioritized
