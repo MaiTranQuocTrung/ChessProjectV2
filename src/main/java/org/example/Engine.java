@@ -13,6 +13,7 @@ Search:
 - Q search (captures)
 - Check search extension
 - MVV-LVA sorted moves
+- Killer moves
 - Iterative deepening (time constraint + move ordering)
 - Null move pruning
 Evaluation:
@@ -110,16 +111,16 @@ public class Engine{
     }
 
     // Sorting by MVV-LVA and TT + checks and promotions
-    private List<Move> moveGenerator(Board board, boolean isCapture){
+    private List<Move> moveGenerator(Board board, boolean isCapture, int ply){
         if (isCapture){
-            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT);
+            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply);
         }
-        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT);
+        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply);
     }
 
 
     // Search through capture and check moves to give an accurate eval of quiet positions
-    private int QSearch(Board board, int alpha, int beta) {
+    private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
 
         if (board.isRepetition()) {
@@ -139,11 +140,11 @@ public class Engine{
             alpha = stand_pat;
         }
 
-        for (Move move : moveGenerator(board, true)) {
+        for (Move move : moveGenerator(board, true, ply)) {
                 if (!board.doMove(move)){
                     continue;
                 }
-                int score = -QSearch(board, -beta, -alpha);
+                int score = -QSearch(board, -beta, -alpha, ply + 1);
                 board.undoMove();
 
                 if (score >= beta) {
@@ -165,7 +166,7 @@ public class Engine{
 
         // Quiescence search at leaf nodes
         if (depth <= 0 || ply >= 100) {
-            int score = QSearch(board, alpha, beta);
+            int score = QSearch(board, alpha, beta, ply);
             return new MinimaxInfo(score, null);
         }
         // Time management check
@@ -220,7 +221,7 @@ public class Engine{
         }
 
         // Main search loop
-        for (Move move : moveGenerator(board, false)) {
+        for (Move move : moveGenerator(board, false, ply)) {
             board.doMove(move);
             // Check extension
             int extension = numExtension < 16 && board.isKingAttacked() ? 1 : 0;
@@ -248,6 +249,7 @@ public class Engine{
 
             if (score >= beta) {
                 TOTAL_PRUNES++;
+                boardHelper.killerMoves[ply] = bestMove;
                 break;
             }
         }
