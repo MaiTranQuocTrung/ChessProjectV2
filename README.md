@@ -12,11 +12,13 @@ I have, therefore, decided to recompile the program to a negamax framework and r
 - Quiescence search (both checks and captures)
 - MVV-LVA sorted moves
 - Iterative deepening
+- Null move pruning (fixed R=2)
 
 ### Evaluation
-- **Tampered evaluation**: Game phase determined by the number of pieces remaining on the board.
+- **Tampered evaluation**: Game phase determined by the number of pieces remaining on the board and their importance.
 - **Total material**: Weights positions based on the remaining pieces.
 - **Piece-square table**: Evaluates piece positions using weighted tables, influenced by the number of pieces.
+- **Passed pawns**: Reward passed pawns
 - **Simple mobility**: Considers the number of legal moves available for each player at their given turn.
 
 
