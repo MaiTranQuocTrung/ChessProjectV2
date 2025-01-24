@@ -18,6 +18,7 @@ I have, therefore, decided to recompile the program to a negamax framework and r
 - Iterative deepening first move
 - TT moves
 - Killer moves
+- PST
 
 ### Evaluation
 - **Tampered evaluation**: Game phase determined by the number of pieces remaining on the board and their importance.
