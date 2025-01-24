@@ -1,31 +1,14 @@
 package org.example;
+
 import com.github.bhlangonijr.chesslib.Board;
 import com.github.bhlangonijr.chesslib.move.Move;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
-Search:
-- Alpha beta pruning
-- Transposition table (move ordering + reuse positions)
-- Q search
-- Check search extension
-- MVV-LVA sorted moves
-- Killer moves
-- Iterative deepening (time constraint + move ordering)
-- Null move pruning
-Evaluation:
-- Tampered eval (Game phase decided by number of pieces on the board)
-- Total material (weighted by number of pieces)
-- Piece square table (weighted by number of pieces)
-- Simple mobility
-- Doubled pawns punishment
-- Reward passed pawns
- */
-
-public class Engine{
+public class OldEngine {
     // Classes for eval, move ordering, TT
     private final Helper boardHelper = new Helper();
     private final SimpleEval simpleEval = new SimpleEval();
@@ -141,22 +124,22 @@ public class Engine{
         }
 
         for (Move move : moveGenerator(board, true, ply)) {
-                if (!board.doMove(move)){
-                    continue;
-                }
-                int score = -QSearch(board, -beta, -alpha, ply + 1);
-                board.undoMove();
+            if (!board.doMove(move)){
+                continue;
+            }
+            int score = -QSearch(board, -beta, -alpha, ply + 1);
+            board.undoMove();
 
-                if (score >= beta) {
-                    TOTAL_PRUNES++;
-                    return score;
-                }
-                if (score > bestValue){
-                    bestValue = score;
-                }
-                if (score > alpha) {
-                    alpha = score;
-                }
+            if (score >= beta) {
+                TOTAL_PRUNES++;
+                return score;
+            }
+            if (score > bestValue){
+                bestValue = score;
+            }
+            if (score > alpha) {
+                alpha = score;
+            }
         }
         return bestValue;
     }
@@ -183,6 +166,7 @@ public class Engine{
         if (board.isMated()) {
             return new MinimaxInfo(-MATE_SCORE + ply, null);
         }
+
         // Transposition table lookup
         TranspositionTable.Entry entry = TT.getEntry(board.getZobristKey());
         if (entry != null && entry.depth >= depth && ply > 0) {
@@ -203,7 +187,6 @@ public class Engine{
 
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
-        int moveCounter = 0;
         List<Move> bestLine = new ArrayList<>();
 
         //Null move pruning
@@ -224,7 +207,7 @@ public class Engine{
         // Main search loop
         for (Move move : moveGenerator(board, false, ply)) {
             board.doMove(move);
-            moveCounter++;
+            // Check extension
             int extension = numExtension < 16 && board.isKingAttacked() ? 1 : 0;
             MinimaxInfo childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
             int score = -childInfo.state_value;
@@ -247,16 +230,15 @@ public class Engine{
                     alpha = score;
                 }
             }
+
             if (score >= beta) {
                 TOTAL_PRUNES++;
-                // Killer Move is a quiet move which caused a beta-cutoff
-                if (bestMove != null && !boardHelper.isCapture(board, bestMove)){
-                    boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
-                    boardHelper.killerMoves[0][ply] = bestMove;
-                }
+                boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
+                boardHelper.killerMoves[0][ply] = bestMove;
                 break;
             }
         }
+
         // Store position in transposition table
         FLAG flag;
         if (bestValue >= beta) {
@@ -269,13 +251,10 @@ public class Engine{
         TT.store(board.getZobristKey(),  depth, bestValue, flag, bestMove, bestLine);
         return new MinimaxInfo(bestValue, bestMove, bestLine, depth);
     }
-
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1");
-        Engine myEngine = new Engine();
-
-        MinimaxInfo engine_choice;
+        OldEngine myEngine = new OldEngine();
+        OldEngine.MinimaxInfo engine_choice;
         while (!board.isMated() && !board.isDraw() && !board.isStaleMate()){
             System.out.println(board);
             engine_choice = myEngine.Think(board,10000);
