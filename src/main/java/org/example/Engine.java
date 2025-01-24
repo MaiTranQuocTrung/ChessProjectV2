@@ -10,7 +10,7 @@ import java.util.List;
 Search:
 - Alpha beta pruning
 - Transposition table (move ordering + reuse positions)
-- Q search (captures)
+- Q search
 - Check search extension
 - MVV-LVA sorted moves
 - Killer moves
@@ -183,7 +183,6 @@ public class Engine{
         if (board.isMated()) {
             return new MinimaxInfo(-MATE_SCORE + ply, null);
         }
-
         // Transposition table lookup
         TranspositionTable.Entry entry = TT.getEntry(board.getZobristKey());
         if (entry != null && entry.depth >= depth && ply > 0) {
@@ -204,11 +203,13 @@ public class Engine{
 
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
+        int moveCounter = 0;
         List<Move> bestLine = new ArrayList<>();
 
         //Null move pruning
         boolean isKingAttacked = board.isKingAttacked();
-        if (depth > 3 && simpleEval.positionalEvaluation(board) >= beta && !isKingAttacked && boardHelper.nullMovePruning(board) && numExtension == 0){
+        if (depth > 3 && simpleEval.positionalEvaluation(board) >= beta
+                && !isKingAttacked && boardHelper.nullMovePruning(board) && numExtension == 0){
             board.doNullMove();
             MinimaxInfo childInfo = Search(board, -beta, -beta + 1, depth - R, ply + 1, timeManager, numExtension);
             int score = -childInfo.state_value;
@@ -223,7 +224,7 @@ public class Engine{
         // Main search loop
         for (Move move : moveGenerator(board, false, ply)) {
             board.doMove(move);
-            // Check extension
+            moveCounter++;
             int extension = numExtension < 16 && board.isKingAttacked() ? 1 : 0;
             MinimaxInfo childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
             int score = -childInfo.state_value;
@@ -246,14 +247,16 @@ public class Engine{
                     alpha = score;
                 }
             }
-
             if (score >= beta) {
                 TOTAL_PRUNES++;
-                boardHelper.killerMoves[ply] = bestMove;
+                // Killer Move is a quiet move which caused a beta-cutoff
+                if (bestMove != null && !boardHelper.isCapture(board, bestMove)){
+                    boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
+                    boardHelper.killerMoves[0][ply] = bestMove;
+                }
                 break;
             }
         }
-
         // Store position in transposition table
         FLAG flag;
         if (bestValue >= beta) {
@@ -269,7 +272,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("8/8/8/8/8/8/7K/k7 w - - 0 1");
+        //board.loadFromFen("r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
