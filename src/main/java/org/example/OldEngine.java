@@ -96,9 +96,9 @@ public class OldEngine {
     // Sorting by MVV-LVA and TT + checks and promotions
     private List<Move> moveGenerator(Board board, boolean isCapture, int ply){
         if (isCapture){
-            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply);
+            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply,true);
         }
-        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply);
+        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply,false);
     }
 
 
@@ -233,8 +233,10 @@ public class OldEngine {
 
             if (score >= beta) {
                 TOTAL_PRUNES++;
-                boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
-                boardHelper.killerMoves[0][ply] = bestMove;
+                if (bestMove != null && !boardHelper.isCapture(board, bestMove)){
+                    boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
+                    boardHelper.killerMoves[0][ply] = bestMove;
+                }
                 break;
             }
         }

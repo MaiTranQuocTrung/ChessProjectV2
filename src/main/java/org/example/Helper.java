@@ -51,14 +51,20 @@ public class Helper {
     }
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
-    public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply){
+    public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply, boolean qSearch){
         List<MoveInfo> move_scores = new ArrayList<>();
         List<Move> sortedMoves = new ArrayList<>();
 
         for (Move move : legalMoves){
             if(!board.doMove(move)){continue;}
             board.undoMove();
-            MoveInfo moveInfo = new MoveInfo(move,calculateMoveValue(board,move, transpositionTable, ply));
+            MoveInfo moveInfo;
+            if(qSearch){
+                moveInfo = new MoveInfo(move, calculateCaptureMoveValue(board, move, transpositionTable));
+            }
+            else {
+                moveInfo = new MoveInfo(move, calculateMoveValue(board, move, transpositionTable, ply));
+            }
             move_scores.add(moveInfo);
         }
 
@@ -82,7 +88,7 @@ public class Helper {
             TranspositionTable.Entry node = transpositionTable.getEntry(board.getZobristKey());
             Move TT_move = node.move;
            if(move.equals(TT_move)){
-                return 4000 - node.depth;
+                return 4000 + node.depth;
             }
         }
 
@@ -105,11 +111,30 @@ public class Helper {
 
         // Check Handling
         if (isCheck(board, move)) {
-            return 300; // Checks are prioritized after PV and promotions
+            return 300;
         }
 
         //PST eval for the rest of the types of moves that are not processed above
         return PST(board,move);
+    }
+
+    //Move ordering move Q-search
+    private int calculateCaptureMoveValue(Board board, Move move,TranspositionTable transpositionTable){
+        // TT values are good
+        int score = 0;
+        if (transpositionTable.containsKey(board.getZobristKey())){
+            TranspositionTable.Entry node = transpositionTable.getEntry(board.getZobristKey());
+            Move TT_move = node.move;
+            if(move.equals(TT_move)){
+                score +=  4000 - node.depth;
+            }
+        }
+
+        if (move.getPromotion() == Piece.WHITE_QUEEN || move.getPromotion() == Piece.BLACK_QUEEN) {
+            score += 2000; // Promotions are highly prioritized
+        }
+        score += 3000 + MVV_LVA(board, move);
+        return score;
     }
 
     private int MVV_LVA(Board board, Move move){

@@ -11,7 +11,7 @@ public class SimpleEval {
         return index ^ 56;
     }
 
-    private int [] gamePhase(Board board){
+    public int [] gamePhase(Board board){
         int [] gamePhase = new int[2];
         for (Piece piece : Piece.allPieces) {
             //Skip if the piece does not exist
