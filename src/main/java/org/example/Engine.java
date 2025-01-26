@@ -113,9 +113,9 @@ public class Engine{
     // Sorting by MVV-LVA and TT + checks and promotions
     private List<Move> moveGenerator(Board board, boolean isCapture, int ply){
         if (isCapture){
-            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply);
+            return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply,true);
         }
-        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply);
+        return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply,false);
     }
 
 
@@ -123,17 +123,23 @@ public class Engine{
     private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
 
-        if (board.isRepetition()) {
+        if (board.isDraw()) {
             return 0;
         }
 
-        //int stand_pat = evaluation.eval(board);
         int stand_pat = simpleEval.positionalEvaluation(board);
         int bestValue = stand_pat;
 
         if (stand_pat >= beta) {
             TOTAL_PRUNES++;
             return stand_pat;
+        }
+        // Delta pruning. Even if you capture a queen along with the move it still doesn't improve the position
+        int BIG_DELTA = 1025;
+        // Deactivate delta pruning for endgame transition
+        if(stand_pat < alpha - BIG_DELTA && simpleEval.gamePhase(board)[1] < 10){
+            TOTAL_PRUNES++;
+            return alpha;
         }
 
         if (alpha < stand_pat) {
@@ -191,7 +197,7 @@ public class Engine{
             List<Move> entryLine = entry.mainLine;
             int entryDepth = entry.depth;
 
-            // Adjust the bestValue based on the flag
+            // Adjust the bestValue based on the flag. Alpha, beta pruning based on flag type.
             if (entry.flag == FLAG.EXACT) {
                 return new MinimaxInfo(entryValue, entryMove, entryLine, entryDepth);
             } else if (entry.flag == FLAG.LOWER && entryValue > beta) {
@@ -225,6 +231,23 @@ public class Engine{
         for (Move move : moveGenerator(board, false, ply)) {
             board.doMove(move);
             moveCounter++;
+            /*
+            int extension = numExtension < 16 && board.isKingAttacked() ? 1 : 0;
+            MinimaxInfo childInfo;
+            int score;
+            if(moveCounter == 1){
+                childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                score = -childInfo.state_value;
+            }
+            else{
+                childInfo = Search(board, -alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                score = -childInfo.state_value;
+                if (score > alpha){
+                    childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                    score = -childInfo.state_value;
+                }
+            }
+             */
             int extension = numExtension < 16 && board.isKingAttacked() ? 1 : 0;
             MinimaxInfo childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
             int score = -childInfo.state_value;
@@ -242,11 +265,12 @@ public class Engine{
                 bestLine.clear();
                 bestLine.add(move);
                 bestLine.addAll(childInfo.main_line);
-
+                // We found a new highest valued move in the position. Record it for future pruning
                 if (score > alpha) {
                     alpha = score;
                 }
             }
+            // Beta cutoff, the tree is pruned, no further nodes will be explored
             if (score >= beta) {
                 TOTAL_PRUNES++;
                 // Killer Move is a quiet move which caused a beta-cutoff
@@ -272,7 +296,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1");
+        //board.loadFromFen("r3k2r/pb2qpbp/1pn1pnp1/2PpP3/2B2B2/2N2N2/PPPQ1PPP/R3K2R w KQkq - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
