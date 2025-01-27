@@ -1,7 +1,7 @@
 # ChessEngine (King Bob IV)
 
 A personal deep dive into chess programming. This is my second attempt at writing a chess engine. My first attempt was using a traditional minimax implementation which turned out to be super complicated down the line.
-I have, therefore, decided to recompile the program to a negamax framework and rework all the evaluation along with the engine.
+I have decided to recompile the program to a negamax framework and rework all of the evaluation along with the engine.
 
 
 ## Features
