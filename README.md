@@ -11,13 +11,16 @@ I have, therefore, decided to recompile the program to a negamax framework and r
 - Transposition table (reuse values from ID and move ordering)
 - Quiescence search (both checks and captures)
 - Iterative deepening
-- Null move pruning (fixed R=2)
+- Null move pruning (R=2 and R=3)
+- Reverse futility pruning (150 margin)
+- Delta pruning
+- Aspiration window (+/- 50 window size)
 
 ### Move Ordering:
 - MVV-LVA sorted moves
 - Iterative deepening first move
 - TT moves
-- Killer moves
+- 2 Killer moves
 - PST
 
 ### Evaluation
@@ -25,6 +28,6 @@ I have, therefore, decided to recompile the program to a negamax framework and r
 - **Total material**: Weights positions based on the remaining pieces.
 - **Piece-square table**: Evaluates piece positions using weighted tables, influenced by the number of pieces.
 - **Passed pawns**: Reward passed pawns
-- **Simple mobility**: Considers the number of legal moves available for each player at their given turn.
+
 
 
