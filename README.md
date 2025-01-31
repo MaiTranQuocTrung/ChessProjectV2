@@ -9,12 +9,13 @@ I have decided to recompile the program to a negamax framework and rework all of
 ### Search
 - Alpha-beta pruning
 - Transposition table (reuse values from ID and move ordering)
-- Quiescence search (both checks and captures)
+- Quiescence search
 - Iterative deepening
-- Null move pruning (R=2 and R=3)
+- Null move pruning (R=2)
 - Reverse futility pruning (150 margin)
 - Delta pruning
 - Aspiration window (+/- 50 window size)
+- Check extension
 
 ### Move Ordering:
 - MVV-LVA sorted moves
