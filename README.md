@@ -16,6 +16,7 @@ I have decided to recompile the program to a negamax framework and rework all of
 - Delta pruning
 - Aspiration window (+/- 50 window size)
 - Check extension
+- Principle Variation Search
 
 ### Move Ordering:
 - MVV-LVA sorted moves
