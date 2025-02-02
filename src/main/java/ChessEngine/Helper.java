@@ -71,8 +71,8 @@ public class Helper {
     // Calculating the value of each moves according to MVV-LVA but checking TT moves first + valuing promotions and checks
     //Ordering scheme as such ID Move > TT move > MVV-LVA > Promotion > Killer 1 > Killer 2 > PST
     private int calculateMoveValue(Board board, Move move, TranspositionTable transpositionTable, int ply){
-        //ID value should always be looked at first
-        if (move.equals(idMove)) {
+        //ID value should always be looked at first but only at root node
+        if (ply == 0 && move.equals(idMove)) {
             return 60000;
         }
         //Transposition value

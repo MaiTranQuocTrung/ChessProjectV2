@@ -18,7 +18,6 @@ Search:
 - Null move pruning
 - Aspiration Window
 - Reverse Futility Pruning
-- Delta pruning
 - PVS
 Evaluation:
 - Tampered eval (Game phase decided by number of pieces on the board)
@@ -71,7 +70,7 @@ public class Engine{
         while (depth <= 64) {
             TOTAL_NODES = 0;
             Instant starts = Instant.now();
-            int aspirationWindow = 40;
+            int aspirationWindow = 50;
             MinimaxInfo currChoice;
 
             while (true) {
@@ -111,6 +110,7 @@ public class Engine{
             if (timeManager.shouldCancel()) {
                 break;
             }
+
             depth++;
         }
         return bestChoice;
@@ -140,14 +140,6 @@ public class Engine{
         if (stand_pat >= beta) {
             TOTAL_PRUNES++;
             return stand_pat;
-        }
-
-        // Delta pruning. Even if you capture a queen along with the move it still doesn't improve the position
-        int BIG_DELTA = 1025;
-        // Deactivate delta pruning for endgame transition
-        if(stand_pat < alpha - BIG_DELTA && simpleEval.gamePhase(board)[1] < 10){
-            TOTAL_PRUNES++;
-            return alpha;
         }
 
         if (alpha < stand_pat) {
@@ -197,13 +189,12 @@ public class Engine{
 
         // Transposition table lookup
         TranspositionTable.Entry entry = TT.getEntry(board.getZobristKey());
-        if (entry != null && entry.move != null && entry.depth >= depth && ply > 0) {
+        if (entry != null && entry.depth >= depth && ply > 0) {
             int entryValue = entry.value;
             Move entryMove = entry.move;
             List<Move> entryLine = entry.mainLine;
             int entryDepth = entry.depth;
-
-            // Adjust the bestValue based on the flag. Alpha, beta pruning based on flag type.
+            // Adjust the bestValue based on the flag
             if (entry.flag == FLAG.EXACT) {
                 return new MinimaxInfo(entryValue, entryMove, entryLine, entryDepth);
             } else if (entry.flag == FLAG.LOWER && entryValue > beta) {
@@ -218,7 +209,7 @@ public class Engine{
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
 
-        //Move lists
+        //Calculated line
         List<Move> bestLine = new ArrayList<>();
 
         //Pruning params
@@ -279,10 +270,8 @@ public class Engine{
             board.undoMove();
 
             // If time is up return the best move found so far.
-            // Since we always place iterative deepening move first there is no risk of taking partial searches
             if (timeManager.shouldCancel()) {
-                //If this is wrong revert to taking null and 0
-                return new MinimaxInfo(bestValue, bestMove, bestLine, depth);
+                return new MinimaxInfo(0,null);
             }
 
             if (score > bestValue) {
