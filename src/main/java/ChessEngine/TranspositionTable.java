@@ -1,7 +1,6 @@
 package ChessEngine;
 
 import com.github.bhlangonijr.chesslib.move.Move;
-
 import java.util.Arrays;
 import java.util.List;
 

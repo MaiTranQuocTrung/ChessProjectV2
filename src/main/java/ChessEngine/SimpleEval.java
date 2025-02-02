@@ -1,5 +1,6 @@
 package ChessEngine;
 import com.github.bhlangonijr.chesslib.*;
+import com.github.bhlangonijr.chesslib.move.Move;
 
 public class SimpleEval {
     private static final int MATE_SCORE = 5000;
@@ -174,17 +175,24 @@ public class SimpleEval {
         // Determine game phase
         int midGame = gamePhase(board)[0];
         int endGame = gamePhase(board)[1];
+
         //Total value
         int valueWhite = 0;
         int valueBlack = 0;
+
         for (Piece piece : Piece.allPieces){
+
             long pieceBitboard = board.getBitboard(piece);
             PieceType pieceType = piece.getPieceType();
             Side pieceSide = piece.getPieceSide();
+
             if (pieceBitboard == 0){continue;}
+
             for (int i = 0; i < 64; i++){
+
                 if ((pieceBitboard & (1L << i)) != 0) {
                     if (pieceSide == Side.BLACK){
+
                         int value = switch (pieceType) {
                             case PAWN -> ((pawn_table_md[i] + pieceWorthMg(PieceType.PAWN)) * midGame +
                                     (pawn_table_eg[i] + pieceWorthEg(PieceType.PAWN)) * endGame);
@@ -203,6 +211,7 @@ public class SimpleEval {
                         valueBlack += value;
                     }
                     else{
+
                         int value = switch (pieceType) {
                             case PAWN -> ((pawn_table_md[flip(i)] + pieceWorthMg(PieceType.PAWN)) * midGame +
                                     (pawn_table_eg[flip(i)] + pieceWorthEg(PieceType.PAWN)) * endGame);
@@ -230,7 +239,6 @@ public class SimpleEval {
         int sideToMove = board.getSideToMove() == Side.WHITE ? 1 : -1;
         return finalEval * sideToMove;
     }
-
 
     private int checkMate(Board board) {
         if (board.isMated()) {
@@ -271,6 +279,6 @@ public class SimpleEval {
     public static void main (String[] args){
         Board board = new Board();
         board.loadFromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-        SimpleEval simpleEval = new SimpleEval();
+        //SimpleEval simpleEval = new SimpleEval();
     }
 }
