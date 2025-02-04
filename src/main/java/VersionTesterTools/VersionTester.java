@@ -14,7 +14,7 @@ public class VersionTester {
         Engine.MinimaxInfo engine_choice;
         OldEngine.MinimaxInfo oldEngineChoice;
             while (!board.isMated() && !board.isDraw() && !board.isStaleMate()) {
-                if (board.getSideToMove() == Side.BLACK) {
+                if (board.getSideToMove() == Side.WHITE) {
                     System.out.println(board);
                     engine_choice = engine.Think(board, 500);
                     Move engineMove = engine_choice.move;

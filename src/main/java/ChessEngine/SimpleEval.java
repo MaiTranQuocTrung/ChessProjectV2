@@ -2,6 +2,9 @@ package ChessEngine;
 import com.github.bhlangonijr.chesslib.*;
 import com.github.bhlangonijr.chesslib.move.Move;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SimpleEval {
     private static final int MATE_SCORE = 5000;
 
@@ -189,10 +192,8 @@ public class SimpleEval {
             if (pieceBitboard == 0){continue;}
 
             for (int i = 0; i < 64; i++){
-
                 if ((pieceBitboard & (1L << i)) != 0) {
                     if (pieceSide == Side.BLACK){
-
                         int value = switch (pieceType) {
                             case PAWN -> ((pawn_table_md[i] + pieceWorthMg(PieceType.PAWN)) * midGame +
                                     (pawn_table_eg[i] + pieceWorthEg(PieceType.PAWN)) * endGame);

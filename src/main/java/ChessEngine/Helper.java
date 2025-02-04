@@ -39,7 +39,7 @@ public class Helper {
         // get piece at origin
         Piece originPiece = board.getPiece(origin);
         // If there is nothing at that destination square
-        return destinationPiece != Piece.NONE && destinationPiece.getPieceSide() != originPiece.getPieceSide();
+        return originPiece != Piece.NONE && destinationPiece != Piece.NONE && destinationPiece.getPieceSide() != originPiece.getPieceSide();
     }
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
@@ -72,9 +72,11 @@ public class Helper {
     //Ordering scheme as such ID Move > TT move > MVV-LVA > Promotion > Killer 1 > Killer 2 > PST
     private int calculateMoveValue(Board board, Move move, TranspositionTable transpositionTable, int ply){
         //ID value should always be looked at first but only at root node
+
         if (ply == 0 && move.equals(idMove)) {
             return 60000;
         }
+
         //Transposition value
         if (transpositionTable.containsKey(board.getZobristKey())){
             TranspositionTable.Entry node = transpositionTable.getEntry(board.getZobristKey());
