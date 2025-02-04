@@ -5,7 +5,7 @@ import com.github.bhlangonijr.chesslib.move.Move;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimpleEval {
+public class ComplexEval {
     private static final int MATE_SCORE = 5000;
 
     public int flip(int index){
@@ -233,9 +233,11 @@ public class SimpleEval {
                 }
             }
         }
+        boolean isEndGame = endGame > 10;
         int finalEval = (valueWhite - valueBlack) / 24;
         //Adding some other eval characteristics
         finalEval += checkMate(board);
+        finalEval += mobilityEval(board,isEndGame);
         finalEval += passedPawns(board);
         int sideToMove = board.getSideToMove() == Side.WHITE ? 1 : -1;
         return finalEval * sideToMove;
@@ -277,9 +279,35 @@ public class SimpleEval {
         return (whitePassedPawnValue - blackPassedPawnValue);
     }
 
+    private int mobilityEval(Board board, boolean isEndgame){
+        List<Move> moveList = board.legalMoves();
+        int whiteMobility = 0;
+        int blackMobility = 0;
+        for(Move move : moveList){
+            Piece piece = board.getPiece(move.getFrom());
+
+            int mobilityValue = switch (piece.getPieceType()){
+                case BISHOP -> isEndgame ? 6 : 5;
+                case QUEEN -> 3 ;
+                case ROOK -> isEndgame ? 4 : 3;
+                case KING -> isEndgame ? 0 : -10;
+                case null, default -> 0;
+            };
+
+            if(piece.getPieceSide() == Side.WHITE){
+                whiteMobility += mobilityValue;
+            }
+            else{
+                blackMobility += mobilityValue;
+            }
+        }
+        return whiteMobility - blackMobility;
+    }
+
     public static void main (String[] args){
         Board board = new Board();
         board.loadFromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
         //SimpleEval simpleEval = new SimpleEval();
     }
 }
+

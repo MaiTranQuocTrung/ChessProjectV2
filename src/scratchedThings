@@ -32,3 +32,12 @@ private int mobility(Board board){
         }
         return whiteMobility - blackMobility;
     }
+
+
+    boardHelper.historyHeuristic[bestMove.getFrom().ordinal()][bestMove.getTo().ordinal()] += depth*depth;
+
+                        for(Move qMove : quietMoves){
+                            if(!qMove.equals(bestMove)) {
+                                boardHelper.historyHeuristic[qMove.getFrom().ordinal()][qMove.getTo().ordinal()] -= depth * depth;
+                            }
+                        }

@@ -117,7 +117,7 @@ public class Engine{
     }
 
 
-    // Sorting by MVV-LVA and TT + checks and promotions
+    // Sorting by ID move > ttMove > promotions > MVV-LVA > Killers2 > PST
     private List<Move> moveGenerator(Board board, boolean isCapture, int ply){
         if (isCapture){
             return boardHelper.sortMoves(board, board.pseudoLegalCaptures(), TT, ply,true);
@@ -126,7 +126,7 @@ public class Engine{
     }
 
 
-    // Search through capture and check moves to give an accurate eval of quiet positions
+    // Search through capture moves to give an accurate eval of quiet position since we can't when there is tactics
     private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
 
@@ -204,30 +204,22 @@ public class Engine{
             }
         }
 
-        // PVS search params
-        int moveCounter = 0;
-        int bestValue = -Integer.MAX_VALUE;
-        Move bestMove = null;
-
-        //Calculated line
-        List<Move> bestLine = new ArrayList<>();
-
         //Pruning params
         boolean isKingAttacked = board.isKingAttacked();
         boolean nullWindow = alpha == beta - 1;
 
         //Reverse Futility Pruning
         int futilityMargin = 150 * depth;
-        //If your score is so good you can take a big hit and still get the beta cutoff, go for it
-        //Only apply when we are at a relatively low depth, at deeper depths there are more tactical nuances
-        if (depth < 5 && simpleEval.positionalEvaluation(board) > beta + futilityMargin
+        //If your score is so good you can take a big hit and still get the beta cutoff (exclusive), go for it
+        //Only apply when we are at a relatively lower depths, at deeper depths there are more tactical nuances
+        if (depth < 6 && simpleEval.positionalEvaluation(board) > beta + futilityMargin
                 && !isKingAttacked && numExtension == 0 && nullWindow){
             return new MinimaxInfo(simpleEval.positionalEvaluation(board),null);
         }
 
         //Null move pruning
         // If you skip a turn and still manage to obtain a beta cutoff then go for it
-        if (depth > 3 && simpleEval.positionalEvaluation(board) >= beta
+        if (depth > 2  && simpleEval.positionalEvaluation(board) >= beta
                 && !isKingAttacked && boardHelper.nullMovePruning(board) && numExtension == 0 && nullWindow){
             board.doNullMove();
             MinimaxInfo childInfo = Search(board, -beta, beta + 1, depth - R, ply + 1, timeManager, numExtension);
@@ -239,6 +231,14 @@ public class Engine{
                 return new MinimaxInfo(score,null);
             }
         }
+
+        // PVS search params
+        int moveCounter = 0;
+        int bestValue = -Integer.MAX_VALUE;
+        Move bestMove = null;
+
+        //Calculated line
+        List<Move> bestLine = new ArrayList<>();
 
         // Main search loop
         for (Move move : moveGenerator(board, false, ply)) {
@@ -259,16 +259,22 @@ public class Engine{
             }
             //Else do a narrow search
             else{
+                //LMR
+                boolean LMR = moveCounter > 3 && depth > 2 && extension == 0 && !boardHelper.isCapture(board,move);
+                final int reduceDepth = LMR ? 1 : 0;
                 childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
                 score = -childInfo.state_value;
                 //If it turns out we found a better move then do a full search
-                if (score > alpha){
+                if (score > alpha && score < beta){
                     childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
                     score = -childInfo.state_value;
                 }
             }
             board.undoMove();
 
+            if (board.isRepetition(1)) {
+                return new MinimaxInfo(0, move);
+            }
             // If time is up return the best move found so far.
             if (timeManager.shouldCancel()) {
                 return new MinimaxInfo(0,null);
@@ -312,7 +318,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("3rr1k1/pp3ppp/3b4/2p5/2Q5/6qP/PPP1B1P1/R1B2K1R b - - 0 1");
+        //board.loadFromFen("K7/1P6/kp6/8/PP6/8/8/5q2 w - - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
