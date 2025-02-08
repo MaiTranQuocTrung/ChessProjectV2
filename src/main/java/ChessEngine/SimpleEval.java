@@ -1,9 +1,5 @@
 package ChessEngine;
 import com.github.bhlangonijr.chesslib.*;
-import com.github.bhlangonijr.chesslib.move.Move;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SimpleEval {
     private static final int MATE_SCORE = 5000;
@@ -50,6 +46,16 @@ public class SimpleEval {
             case BISHOP -> 297;
             case ROOK -> 512;
             case QUEEN -> 936;
+            case null, default -> 0;
+        };
+    }
+
+    private int getMobilityValue(PieceType pieceType, boolean isEndgame){
+        return switch (pieceType){
+            case BISHOP -> isEndgame ? 6 : 5;
+            case QUEEN -> 3 ;
+            case ROOK -> isEndgame ? 4 : 3;
+            case KING -> isEndgame ? 0 : -10;
             case null, default -> 0;
         };
     }
@@ -182,18 +188,31 @@ public class SimpleEval {
         //Total value
         int valueWhite = 0;
         int valueBlack = 0;
+        boolean isEndGame = endGame > 13;
 
         for (Piece piece : Piece.allPieces){
 
             long pieceBitboard = board.getBitboard(piece);
             PieceType pieceType = piece.getPieceType();
             Side pieceSide = piece.getPieceSide();
-
             if (pieceBitboard == 0){continue;}
-
             for (int i = 0; i < 64; i++){
                 if ((pieceBitboard & (1L << i)) != 0) {
                     if (pieceSide == Side.BLACK){
+
+                        //Get mobility score
+                        // Make the king a queen to evaluate mobility as a form of king safety
+                        long mobility = switch (pieceType){
+                            case ROOK -> Bitboard.getRookAttacks(board.getBitboard(),Square.squareAt(i));
+                            case QUEEN, KING -> Bitboard.getQueenAttacks(board.getBitboard(),Square.squareAt(i));
+                            case BISHOP -> Bitboard.getBishopAttacks(board.getBitboard(),Square.squareAt(i));
+                            default -> 0;
+                        };
+                        long numberOfAttacks = Long.bitCount(mobility & ~(board.getBitboard(Side.BLACK)));
+                        int blackMobility = (int) (numberOfAttacks * getMobilityValue(pieceType,isEndGame));
+                        valueBlack += blackMobility;
+
+                        //Get material and positional score
                         int value = switch (pieceType) {
                             case PAWN -> ((pawn_table_md[i] + pieceWorthMg(PieceType.PAWN)) * midGame +
                                     (pawn_table_eg[i] + pieceWorthEg(PieceType.PAWN)) * endGame);
@@ -209,10 +228,23 @@ public class SimpleEval {
                                     (king_table_eg[i] + pieceWorthEg(PieceType.KING)) * endGame);
                             default -> 0;
                         };
-                        valueBlack += value;
+                        valueBlack += value + blackMobility;
                     }
                     else{
 
+                        // Get mobility score
+                        long mobility = switch (pieceType){
+                            case PAWN -> Bitboard.getPawnAttacks(Side.WHITE,Square.squareAt(i));
+                            case ROOK -> Bitboard.getRookAttacks(board.getBitboard(),Square.squareAt(i));
+                            case QUEEN, KING -> Bitboard.getQueenAttacks(board.getBitboard(),Square.squareAt(i));
+                            case BISHOP -> Bitboard.getBishopAttacks(board.getBitboard(),Square.squareAt(i));
+                            default -> 0;
+                        };
+                        long numberOfAttacks = Long.bitCount(mobility & ~(board.getBitboard(Side.WHITE)));
+                        int whiteMobility = (int) (numberOfAttacks * getMobilityValue(pieceType,isEndGame));
+                        valueWhite += whiteMobility;
+
+                        //Get material and positional score
                         int value = switch (pieceType) {
                             case PAWN -> ((pawn_table_md[flip(i)] + pieceWorthMg(PieceType.PAWN)) * midGame +
                                     (pawn_table_eg[flip(i)] + pieceWorthEg(PieceType.PAWN)) * endGame);
@@ -233,10 +265,13 @@ public class SimpleEval {
                 }
             }
         }
+        //Material and positional + mobility
         int finalEval = (valueWhite - valueBlack) / 24;
+
         //Adding some other eval characteristics
         finalEval += checkMate(board);
         finalEval += passedPawns(board);
+
         int sideToMove = board.getSideToMove() == Side.WHITE ? 1 : -1;
         return finalEval * sideToMove;
     }
@@ -279,7 +314,10 @@ public class SimpleEval {
 
     public static void main (String[] args){
         Board board = new Board();
-        board.loadFromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-        //SimpleEval simpleEval = new SimpleEval();
+        board.loadFromFen("rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1");
+        SimpleEval simpleEval = new SimpleEval();
+        System.out.println(board);
+        simpleEval.positionalEvaluation(board);
     }
+
 }

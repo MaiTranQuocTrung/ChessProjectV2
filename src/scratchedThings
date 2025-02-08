@@ -41,3 +41,34 @@ private int mobility(Board board){
                                 boardHelper.historyHeuristic[qMove.getFrom().ordinal()][qMove.getTo().ordinal()] -= depth * depth;
                             }
                         }
+
+
+     /*
+                //LMR
+                boolean LMR = moveCounter > 3 && depth > 2 && extension == 0 && !boardHelper.isCapture(board,move);
+                if(LMR){
+                    final int reducedDepth = 1;
+                    childInfo = Search(board, -beta, -alpha, depth - 1 - reducedDepth, ply + 1, timeManager, numExtension + extension);
+                    score = -childInfo.state_value;
+                    if (score > alpha && score < beta){
+                        childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                    }
+                }
+                else{
+                    if(moveCounter == 1){
+                        childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                    }
+                    //Else do a narrow search
+                    else{
+                        childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                        //If it turns out we found a better move then do a full search
+                        if (score > alpha && score < beta){
+                            childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                            score = -childInfo.state_value;
+                        }
+                    }
+                }
+                 */

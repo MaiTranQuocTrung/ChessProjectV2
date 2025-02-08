@@ -1,5 +1,6 @@
 package ChessEngine;
 import com.github.bhlangonijr.chesslib.Board;
+import com.github.bhlangonijr.chesslib.Piece;
 import com.github.bhlangonijr.chesslib.move.Move;
 import java.time.Duration;
 import java.time.Instant;
@@ -116,7 +117,6 @@ public class Engine{
         return bestChoice;
     }
 
-
     // Sorting by ID move > ttMove > promotions > MVV-LVA > Killers2 > PST
     private List<Move> moveGenerator(Board board, boolean isCapture, int ply){
         if (isCapture){
@@ -147,20 +147,21 @@ public class Engine{
         }
 
         for (Move move : moveGenerator(board, true, ply)) {
-                board.doMove(move);
-                int score = -QSearch(board, -beta, -alpha, ply + 1);
-                board.undoMove();
+            board.doMove(move);
+            int score = -QSearch(board, -beta, -alpha, ply + 1);
+            board.undoMove();
 
-                if (score >= beta) {
-                    TOTAL_PRUNES++;
-                    return score;
-                }
-                if (score > bestValue){
-                    bestValue = score;
-                }
-                if (score > alpha) {
-                    alpha = score;
-                }
+            if (score >= beta) {
+                TOTAL_PRUNES++;
+                return score;
+            }
+
+            if (score > bestValue){
+                bestValue = score;
+            }
+            if (score > alpha) {
+                alpha = score;
+            }
         }
         return bestValue;
     }
@@ -209,16 +210,16 @@ public class Engine{
         boolean nullWindow = alpha == beta - 1;
 
         //Reverse Futility Pruning
-        int futilityMargin = 150 * depth;
-        //If your score is so good you can take a big hit and still get the beta cutoff (exclusive), go for it
+        int futilityMargin = 130 * depth;
+        //If your score is so good you can take a big hit and still get the beta cutoff (exclusive), no need ot search deeper
         //Only apply when we are at a relatively lower depths, at deeper depths there are more tactical nuances
-        if (depth < 6 && simpleEval.positionalEvaluation(board) > beta + futilityMargin
+        if (depth < 7 && simpleEval.positionalEvaluation(board) > beta + futilityMargin
                 && !isKingAttacked && numExtension == 0 && nullWindow){
             return new MinimaxInfo(simpleEval.positionalEvaluation(board),null);
         }
 
         //Null move pruning
-        // If you skip a turn and still manage to obtain a beta cutoff then go for it
+        // If you skip a turn and still manage to obtain a beta cutoff then we don't need to search further
         if (depth > 2  && simpleEval.positionalEvaluation(board) >= beta
                 && !isKingAttacked && boardHelper.nullMovePruning(board) && numExtension == 0 && nullWindow){
             board.doNullMove();
@@ -236,6 +237,7 @@ public class Engine{
         int moveCounter = 0;
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
+        int quiteCount = 0;
 
         //Calculated line
         List<Move> bestLine = new ArrayList<>();
@@ -259,9 +261,6 @@ public class Engine{
             }
             //Else do a narrow search
             else{
-                //LMR
-                boolean LMR = moveCounter > 3 && depth > 2 && extension == 0 && !boardHelper.isCapture(board,move);
-                final int reduceDepth = LMR ? 1 : 0;
                 childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
                 score = -childInfo.state_value;
                 //If it turns out we found a better move then do a full search
@@ -272,9 +271,6 @@ public class Engine{
             }
             board.undoMove();
 
-            if (board.isRepetition(1)) {
-                return new MinimaxInfo(0, move);
-            }
             // If time is up return the best move found so far.
             if (timeManager.shouldCancel()) {
                 return new MinimaxInfo(0,null);
@@ -300,6 +296,16 @@ public class Engine{
                     boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
                     boardHelper.killerMoves[0][ply] = bestMove;
                 }
+                break;
+            }
+            if(!boardHelper.isCapture(board,move)){
+                quiteCount++;
+            }
+            //Internal reduction
+            // If we examined a certain amount of quiet moves assume they won't be that good anyways so skip
+            // Exclude non-quiet moves, moves not in PV window (raise alpha, greater than beta)
+            if(quiteCount > 3 * depth * depth && !board.isKingAttacked()
+                    && alpha == beta - 1 && move.getPromotion() == Piece.NONE){
                 break;
             }
         }
