@@ -16,6 +16,7 @@ I have decided to recompile the program to a negamax framework and rework all of
 - Aspiration window (+/- 50 window size)
 - Check extension
 - Principle Variation Search
+- Late Move Pruning
 
 ### Move Ordering:
 - MVV-LVA sorted moves
@@ -29,6 +30,7 @@ I have decided to recompile the program to a negamax framework and rework all of
 - **Total material**: Weights positions based on the remaining pieces.
 - **Piece-square table**: Evaluates piece positions using weighted tables, influenced by the number of pieces.
 - **Passed pawns**: Reward passed pawns
+- **Mobility**: Weighted by pieces
 
 
 
