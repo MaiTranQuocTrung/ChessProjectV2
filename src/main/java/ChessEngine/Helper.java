@@ -44,7 +44,7 @@ public class Helper {
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
     public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply, boolean qSearch){
-        List<MoveInfo> move_scores = new ArrayList<>();
+        List<MoveInfo> moveScores = new ArrayList<>();
         List<Move> sortedMoves = new ArrayList<>();
 
         for (Move move : legalMoves){
@@ -57,12 +57,12 @@ public class Helper {
             else {
                 moveInfo = new MoveInfo(move, calculateMoveValue(board, move, transpositionTable, ply));
             }
-            move_scores.add(moveInfo);
+            moveScores.add(moveInfo);
         }
 
         // sort by biggest to smallest
-        move_scores.sort((a,b) -> b.value - a.value);
-        for (MoveInfo move_info : move_scores) {
+        moveScores.sort((a,b) -> b.value - a.value);
+        for (MoveInfo move_info : moveScores) {
             sortedMoves.add(move_info.move);
         }
         return sortedMoves;
