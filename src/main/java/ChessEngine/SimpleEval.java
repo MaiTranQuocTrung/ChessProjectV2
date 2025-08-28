@@ -8,6 +8,8 @@ public class SimpleEval {
         return index ^ 56;
     }
 
+    //Game phase can be differentiated into mid game and end game which are integers represented by the number of pieces and how important they are
+    //In our case pawns are not important and queen > rooks > bishops and knights
     public int [] gamePhase(Board board){
         int [] gamePhase = new int[2];
         for (Piece piece : Piece.allPieces) {
@@ -321,3 +323,4 @@ public class SimpleEval {
     }
 
 }
+
