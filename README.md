@@ -32,5 +32,57 @@ I have decided to recompile the program to a negamax framework and rework all of
 - **Passed pawns**: Reward passed pawns
 - **Mobility**: Weighted by pieces
 
+## Download and build (KingBobV2)
 
+The current engine lives in the `KingBobV2` Maven module.
+
+### Prerequisites
+
+- [Git](https://git-scm.com/)
+- [JDK 22](https://jdk.java.net/22/) or newer
+- [Apache Maven](https://maven.apache.org/download.cgi) 3.8+
+
+Confirm both tools are on your `PATH`:
+
+```bash
+java -version
+mvn -version
+```
+
+### Clone the repo
+
+```bash
+git clone https://github.com/MaiTranQuocTrung/ChessProjectV2.git
+cd ChessProjectV2/KingBobV2
+```
+
+### Build
+
+```bash
+mvn package
+```
+
+This compiles the engine and writes a jar to `KingBobV2/target/`.
+
+### Run locally
+
+From `KingBobV2`, start a self-play game (10 seconds per move):
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass="org.example.Engine"
+```
+
+You can also open the repo in IntelliJ IDEA and run `org.example.Engine`.
+
+## Challenge it on Lichess
+
+KingBobV2 is hosted as the Lichess bot **[KingBobIV](https://lichess.org/@/KingBobIV)**. It accepts **Blitz**, **Rapid**, and **Classical** games.
+
+1. Sign in at [lichess.org](https://lichess.org).
+2. Open the bot profile: [https://lichess.org/@/KingBobIV](https://lichess.org/@/KingBobIV).
+3. Click **Challenge** (the crossed swords).
+4. Pick a Blitz, Rapid, or Classical time control, then send the challenge.
+5. Wait for the bot to accept. It only accepts while it is online — check the profile for a green **Active** status.
+
+You can also challenge from any Lichess game screen: click **Play with a friend**, paste `KingBobIV` as the opponent, and send the invite.
 
