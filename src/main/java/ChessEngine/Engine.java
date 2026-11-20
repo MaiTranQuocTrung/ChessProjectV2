@@ -20,17 +20,14 @@ Search:
 - Reverse Futility Pruning
 - PVS
 Evaluation:
-- Tampered eval (Game phase decided by number of pieces on the board)
-- Total material (weighted by number of pieces)
-- Piece square table (weighted by number of pieces)
-- Reward passed pawns
-- Mobility (Rough King Safety with Queen as King and penalize mobility)
+- NNUE (768 -> 1024)x2 -> 1 trained on Stockfish evaluations of Lichess positions (NNUEEval)
+- Accumulators updated incrementally from the previous ply (2 to 4 weight rows per move)
  */
 
 public class Engine{
     // Classes for eval, move ordering, TT
     private final Helper boardHelper = new Helper();
-    private final SimpleEval simpleEval = new SimpleEval();
+    private final NNUEEval nnueEval = new NNUEEval();
     // Approx 1GB TT
     private final TranspositionTable TT = new TranspositionTable(1024);
     private static final int MATE_SCORE = 1000000;
@@ -63,6 +60,8 @@ public class Engine{
         int depth = 1;
         MinimaxInfo bestChoice = null;
         SearchManager timeManager = new SearchManager(searchTime);
+        // Root accumulators, every move searched from here updates them incrementally
+        nnueEval.reset(board);
 
         if (TT.getCapacity() >= 100) {
             TT.clear();
@@ -137,7 +136,7 @@ public class Engine{
             return 0;
         }
 
-        int stand_pat = simpleEval.positionalEvaluation(board);
+        int stand_pat = nnueEval.positionalEvaluation(board);
         int bestValue = stand_pat;
 
         if (stand_pat >= beta) {
@@ -150,9 +149,9 @@ public class Engine{
         }
 
         for (Move move : moveGenerator(board, true, ply)) {
-            board.doMove(move);
+            nnueEval.doMove(board, move);
             int score = -QSearch(board, -beta, -alpha, ply + 1);
-            board.undoMove();
+            nnueEval.undoMove(board);
 
             if (score >= beta) {
                 TOTAL_PRUNES++;
@@ -210,26 +209,28 @@ public class Engine{
 
         //Pruning params
         boolean isKingAttacked = board.isKingAttacked();
+        // Evaluated once, shared by reverse futility pruning and null move pruning
+        int staticEval = nnueEval.positionalEvaluation(board);
 
         //Reverse Futility Pruning
         int futilityMargin = 150 * depth;
         //If your score is so good you can take a big hit and still get the beta cutoff (exclusive), no need to search deeper
         //Only apply when we are at a relatively lower depths, at deeper depths there are more tactical nuances
-        if (depth < 6 && simpleEval.positionalEvaluation(board) - futilityMargin > beta
+        if (depth < 6 && staticEval - futilityMargin > beta
                 && !isKingAttacked && numExtension == 0){
-            return new MinimaxInfo(simpleEval.positionalEvaluation(board),null);
+            return new MinimaxInfo(staticEval,null);
         }
 
         //Null move pruning
         // If you skip a turn and still manage to obtain a beta cutoff then we don't need to search further
-        if (depth > 2  && beta <= simpleEval.positionalEvaluation(board)
+        if (depth > 2  && beta <= staticEval
                 && !isKingAttacked && boardHelper.nullMovePruning(board)
                 && numExtension == 0){
-            board.doNullMove();
+            nnueEval.doNullMove(board);
             MinimaxInfo childInfo = Search(board, -beta, beta + 1, depth - R, ply + 1, timeManager, numExtension);
             int score = -childInfo.state_value;
             Move move = childInfo.move;
-            board.undoMove();
+            nnueEval.undoMove(board);
             // Beta cutoff, return the score immediately
             if (score >= beta){
                 TT.store(board.getZobristKey(), depth, score, FLAG.LOWER, move, null);
@@ -247,7 +248,7 @@ public class Engine{
 
         // Main search loop
         for (Move move : moveGenerator(board, false, ply)) {
-            board.doMove(move);
+            nnueEval.doMove(board, move);
             /*
              Move extension:
              If our king is under attack extend the search by +1 depth but we shouldn't extend pass 16 ply because of time
@@ -276,7 +277,7 @@ public class Engine{
                     score = -childInfo.state_value;
                 }
             }
-            board.undoMove();
+            nnueEval.undoMove(board);
 
             // If time is up return the best move found so far.
             if (timeManager.shouldCancel()) {
