@@ -325,7 +325,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        board.loadFromFen("7k/5b2/3p3K/8/5N2/8/3p3p/6qQ w - - 0 1");
+        //board.loadFromFen("7k/5b2/3p3K/8/5N2/8/3p3p/6qQ w - - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
