@@ -31,6 +31,8 @@ public class Engine{
     // Approx 1GB TT
     private final TranspositionTable TT = new TranspositionTable(1024);
     private static final int MATE_SCORE = 1000000;
+    // Scores this close to MATE_SCORE are mates, the difference being the number of plies
+    private static final int MATE_BOUND = MATE_SCORE - 1000;
     // Search debug info
     int TOTAL_PRUNES;
     int TOTAL_NODES;
@@ -54,6 +56,10 @@ public class Engine{
             this.main_line = main_line != null ? main_line : new ArrayList<>();
             this.depth = depth;
         }
+    }
+
+    public void newGame(){
+        TT.clear();
     }
 
     public MinimaxInfo Think(Board board, long searchTime) {
@@ -193,7 +199,7 @@ public class Engine{
         // Transposition table lookup
         TranspositionTable.Entry entry = TT.getEntry(board.getZobristKey());
         if (entry != null && entry.depth >= depth && ply > 0) {
-            int entryValue = entry.value;
+            int entryValue = scoreFromTT(entry.value, ply);
             Move entryMove = entry.move;
             List<Move> entryLine = entry.mainLine;
             int entryDepth = entry.depth;
@@ -233,7 +239,7 @@ public class Engine{
             nnueEval.undoMove(board);
             // Beta cutoff, return the score immediately
             if (score >= beta){
-                TT.store(board.getZobristKey(), depth, score, FLAG.LOWER, move, null);
+                TT.store(board.getZobristKey(), depth, scoreToTT(score, ply), FLAG.LOWER, move, null);
                 return new MinimaxInfo(score,null);
             }
         }
@@ -319,8 +325,30 @@ public class Engine{
         } else {
             flag = FLAG.UPPER;
         }
-        TT.store(board.getZobristKey(),  depth, bestValue, flag, bestMove, bestLine);
+        TT.store(board.getZobristKey(),  depth, scoreToTT(bestValue, ply), flag, bestMove, bestLine);
         return new MinimaxInfo(bestValue, bestMove, bestLine, depth);
+    }
+
+    // Mate scores count plies from the root of the search, but a stored position can be reached again at another ply
+    // or in a later search, so the table holds them counted from the position itself
+    private static int scoreToTT(int score, int ply){
+        if (score >= MATE_BOUND){
+            return score + ply;
+        }
+        if (score <= -MATE_BOUND){
+            return score - ply;
+        }
+        return score;
+    }
+
+    private static int scoreFromTT(int score, int ply){
+        if (score >= MATE_BOUND){
+            return score - ply;
+        }
+        if (score <= -MATE_BOUND){
+            return score + ply;
+        }
+        return score;
     }
 
     public static void main(String[] args){

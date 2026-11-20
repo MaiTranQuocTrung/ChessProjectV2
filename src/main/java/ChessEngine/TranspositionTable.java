@@ -62,7 +62,7 @@ public class TranspositionTable {
 
     // Get the percentage filled
     public double getCapacity(){
-        return (double) size / table.length;
+        return 100.0 * size / table.length;
     }
 
     //storing data
@@ -71,8 +71,10 @@ public class TranspositionTable {
         Entry oldEntry = table[index];
 
         if (oldEntry == null || replace(oldEntry,key,depth)){
+            if (oldEntry == null){
+                size++;
+            }
             table[index] = new Entry(key,depth,value,flag,move,mainLine);
-            size++;
         }
     }
 
