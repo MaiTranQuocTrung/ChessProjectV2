@@ -194,7 +194,7 @@ public class NNUEEval {
     }
 
     // The network is a resource, so it is packed into the jar. When the resources folder is not on the
-    // classpath, it is read from the file (working directory = project folder, like src/positions)
+    // classpath (compiled without Maven), it is read from the file in the project folder
     private static Network loadNetwork(){
         try (InputStream in = NNUEEval.class.getResourceAsStream("/" + NETWORK_FILE)){
             if (in != null){

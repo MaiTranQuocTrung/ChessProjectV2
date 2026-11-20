@@ -26,57 +26,60 @@ I have decided to recompile the program to a negamax framework and rework all of
 - PST
 
 ### Evaluation
-- **Tampered evaluation**: Game phase determined by the number of pieces remaining on the board and their importance.
-- **Total material**: Weights positions based on the remaining pieces.
-- **Piece-square table**: Evaluates piece positions using weighted tables, influenced by the number of pieces.
-- **Passed pawns**: Reward passed pawns
-- **Mobility**: Weighted by pieces
+- **NNUE**: a (768 -> 1024)x2 -> 1 neural network trained on Stockfish evaluations of Lichess positions
+  (`NNUEEval`, network file in `src/main/resources`)
+- **Efficient updates**: each position's accumulators are computed from the previous ply's, changing 2 input
+  neurons for a quiet move, 3 for a capture and 4 for castling
 
-## Download and build (KingBobV2)
+The previous hand-crafted evaluation (`SimpleEval`: tapered material, piece-square tables, passed pawns, mobility)
+is still `OldEngine`'s evaluation, and move ordering uses its piece values and tables.
 
-The current engine lives in the `KingBobV2` Maven module.
+## Project layout
 
-### Prerequisites
+One Maven project with one source folder:
 
-- [Git](https://git-scm.com/)
-- [JDK 22](https://jdk.java.net/22/) or newer
-- [Apache Maven](https://maven.apache.org/download.cgi) 3.8+
-
-Confirm both tools are on your `PATH`:
-
-```bash
-java -version
-mvn -version
+```
+pom.xml                            build: chesslib dependency and the bot jar
+src/main/java/ChessEngine/         the engine
+    uciLichess.java                  UCI protocol, what the Lichess bot runs
+    Engine.java                      search
+    NNUEEval.java, Network.java      NNUE evaluation
+    Helper.java                      move ordering
+    SimpleEval.java                  hand-crafted evaluation
+    OldEngine.java                   previous version of the engine, the opponent in version tests
+    TranspositionTable.java, SearchManager.java, SmallOpeningBook.java, FLAG.java
+src/main/java/VersionTesterTools/  matches between Engine and OldEngine
+src/main/resources/                the trained network, packed into the jar
+data/                              test openings and the opening book they are taken from
+notes/                             code snippets kept for later
 ```
 
-### Clone the repo
+## Open and run in IntelliJ IDEA
 
-```bash
-git clone https://github.com/MaiTranQuocTrung/ChessProjectV2.git
-cd ChessProjectV2/KingBobV2
-```
+Requires JDK 22 or newer. Use File > Open and select this folder (the one containing `pom.xml`): IntelliJ imports
+it as a Maven project and downloads chesslib. These run configurations then appear in the run menu of the toolbar.
+They run from the project folder, which the version tests need to find `data/`.
 
-### Build
+| Run configuration | Main class | What it does |
+|---|---|---|
+| UCI engine (Lichess bot) | `ChessEngine.uciLichess` | The engine as a UCI program: type `position startpos` and `go` in the console |
+| Self-play | `ChessEngine.Engine` | The engine plays a game against itself, 10 seconds per move |
+| Version test: all openings | `VersionTesterTools.FullVersionTester` | `Engine` (white) against `OldEngine` (black) from every opening in `data/positions.txt`, 0.5 s per move |
+| Version test: one game | `VersionTesterTools.VersionTester` | One game from the start position, `OldEngine` white, 1 s per move |
+| Regenerate test openings | `VersionTesterTools.PositionLoader` | Rewrites `data/positions.txt` with the first 1501 lines of `data/whiteProcessedBook.txt` |
+
+## Build the bot jar
 
 ```bash
 mvn package
 ```
 
-This compiles the engine and writes a jar to `KingBobV2/target/`.
-
-### Run locally
-
-From `KingBobV2`, start a self-play game (10 seconds per move):
-
-```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass="org.example.Engine"
-```
-
-You can also open the repo in IntelliJ IDEA and run `org.example.Engine`.
+In IntelliJ: Maven tool window > Lifecycle > package. This writes `target/KingBob.jar` with chesslib and the
+network inside; `java -jar target/KingBob.jar` starts the UCI engine, which is what the Lichess bot runs.
 
 ## Challenge it on Lichess
 
-KingBobV2 is hosted as the Lichess bot **[KingBobIV](https://lichess.org/@/KingBobIV)**. It accepts **Blitz**, **Rapid**, and **Classical** games.
+The engine is hosted as the Lichess bot **[KingBobIV](https://lichess.org/@/KingBobIV)**. It accepts **Blitz**, **Rapid**, and **Classical** games.
 
 1. Sign in at [lichess.org](https://lichess.org).
 2. Open the bot profile: [https://lichess.org/@/KingBobIV](https://lichess.org/@/KingBobIV).
