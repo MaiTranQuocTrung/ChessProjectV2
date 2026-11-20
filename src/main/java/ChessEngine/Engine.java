@@ -181,8 +181,8 @@ public class Engine{
             return new MinimaxInfo(0, null);
         }
 
-        // Draw detection
-        if (board.isDraw() || board.isStaleMate() || board.isRepetition(1)) {
+        // Draw detection, not at the root: it has to return a move even if the position occurred before
+        if (ply > 0 && (board.isDraw() || board.isStaleMate() || board.isRepetition(1))) {
             return new MinimaxInfo(0, null);
         }
         // Checkmate detection

@@ -13,7 +13,7 @@ import java.io.IOException;
 public class FullVersionTester {
     public static void main (String [] args) throws IOException {
         //Reader stuff
-        FileReader fr = new FileReader("src/positions");
+        FileReader fr = new FileReader("data/positions.txt");
         BufferedReader br = new BufferedReader(fr);
         String position;
 
