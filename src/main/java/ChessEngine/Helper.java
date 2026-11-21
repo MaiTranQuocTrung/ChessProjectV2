@@ -13,6 +13,14 @@ public class Helper {
     private Move idMove;
     public Move [][] killerMoves = new Move[2][100];
 
+    // check if at least 1 legal move exists
+    public boolean hasLegalMove(Board board) {
+        for (Move move : board.pseudoLegalMoves()) {
+            if (board.doMove(move)) { board.undoMove(); return true; }
+        }
+        return false;
+    }
+
     //fetching iterative deepening move
     public void iterativeDeepeningMove(Move move){
         this.idMove = move;

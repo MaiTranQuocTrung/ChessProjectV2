@@ -81,9 +81,9 @@ public class NNUEEval {
 
     // Evaluation in centipawns from the side to move's point of view
     public int positionalEvaluation(Board board){
-        if (board.isMated()){
+        /*if (board.isMated()){
             return -MATE_SCORE;
-        }
+        }*/
         updateAccumulators();
         int us = board.getSideToMove().ordinal();
         int eval = network.forward(accumulators[ply][us], accumulators[ply][us ^ 1]);

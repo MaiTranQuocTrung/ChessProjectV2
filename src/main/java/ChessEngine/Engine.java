@@ -137,16 +137,16 @@ public class Engine{
      */
     private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
-
-        /*if (board.isDraw()) {
-            return 0;
-        }*/
-
         // new check without the need for 3 fold
         if (board.getHalfMoveCounter() >= 100 || board.isInsufficientMaterial()) {
             return 0;
         }
 
+        // mate: in check with no legal move (only checked positions pay for this)
+        boolean inCheck = board.isKingAttacked();
+        if (inCheck && !boardHelper.hasLegalMove(board)) {
+            return -MATE_SCORE + ply;
+        }
         int stand_pat = nnueEval.positionalEvaluation(board);
         int bestValue = stand_pat;
 
@@ -358,7 +358,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2BPP3/2N2N2/PPP2PPP/R1BQK2R w KQ - 0 1");
+        //board.loadFromFen("k7/2K5/7Q/8/8/8/8/8 w - - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
