@@ -138,7 +138,12 @@ public class Engine{
     private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
 
-        if (board.isDraw()) {
+        /*if (board.isDraw()) {
+            return 0;
+        }*/
+
+        // new check without the need for 3 fold
+        if (board.getHalfMoveCounter() >= 100 || board.isInsufficientMaterial()) {
             return 0;
         }
 
@@ -188,7 +193,7 @@ public class Engine{
         }
 
         // Draw detection, not at the root: it has to return a move even if the position occurred before
-        if (ply > 0 && (board.isDraw() || board.isStaleMate() || board.isRepetition(1))) {
+        if (ply > 0 && (board.isDraw())) {
             return new MinimaxInfo(0, null);
         }
         // Checkmate detection
@@ -353,7 +358,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("7k/5b2/3p3K/8/5N2/8/3p3p/6qQ w - - 0 1");
+        //board.loadFromFen("r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2BPP3/2N2N2/PPP2PPP/R1BQK2R w KQ - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;

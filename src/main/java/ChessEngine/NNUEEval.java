@@ -57,13 +57,14 @@ public class NNUEEval {
     }
 
     // Use instead of board.doMove(move). Returns false and changes nothing if the move is illegal
-    public boolean doMove(Board board, Move move){
+    public void doMove(Board board, Move move){
         recordMove(board, move);
-        if (board.doMove(move)){
-            return true;
-        }
-        ply--;
-        return false;
+        // no need for full validation this is done by moveGenerator already
+        board.doMove(move, false);
+        /*boolean played = board.doMove(move, false);
+        if (VERIFY && !played){
+            throw new IllegalStateException("Illegal move reached the search: " + move + " in " + board.getFen());
+        }*/
     }
 
     // Use instead of board.doNullMove()
