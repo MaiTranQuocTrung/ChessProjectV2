@@ -7,11 +7,11 @@ import java.io.*;
 public class PositionLoader {
     public static void main(String [] args) throws IOException {
         //Writer
-        String outputFile = "src/positions";
+        String outputFile = "data/positions.txt";
         FileWriter fw = new FileWriter(outputFile);
         BufferedWriter bw = new BufferedWriter(fw);
         //Reader
-        FileReader fr = new FileReader("src/whiteProcessedBook.txt");
+        FileReader fr = new FileReader("data/whiteProcessedBook.txt");
         BufferedReader br = new BufferedReader(fr);
         String line;
         //Board stuff
@@ -32,5 +32,7 @@ public class PositionLoader {
             board = new Board();
             i++;
         }
+        bw.close();
+        br.close();
     }
 }
