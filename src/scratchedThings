@@ -1,0 +1,74 @@
+private int mobility(Board board){
+        int whiteMobility = 0;
+        int blackMobility = 0;
+        boolean isEndgame = gamePhase(board)[1] > 10;
+        for (int i = 0; i < Square.values().length - 1; i++){
+            Square square = Square.values()[i];
+            for (Piece piece : Piece.allPieces){
+
+                //Piece information
+                long pieceBitboard = board.getBitboard(piece);
+                if (pieceBitboard == 0){continue;}
+                PieceType pieceType = piece.getPieceType();
+
+                //Define mobility score
+                int mobilityValue = switch (piece.getPieceType()){
+                    case BISHOP -> isEndgame ? 6 : 5;
+                    case QUEEN -> 3 ;
+                    case ROOK -> isEndgame ? 4 : 3;
+                    case KING -> isEndgame ? 0 : -10;
+                    case null, default -> 0;
+                };
+
+                if(board.getPiece(square).getPieceSide() != Side.WHITE &&
+                        Long.bitCount(board.squareAttackedByPieceType(square,Side.WHITE,pieceType)) != 0){
+                    whiteMobility += mobilityValue;
+                }
+                else if (board.getPiece(square).getPieceSide() != Side.BLACK &&
+                        Long.bitCount(board.squareAttackedByPieceType(square,Side.BLACK,pieceType)) != 0){
+                    blackMobility += mobilityValue;
+                }
+            }
+        }
+        return whiteMobility - blackMobility;
+    }
+
+
+    boardHelper.historyHeuristic[bestMove.getFrom().ordinal()][bestMove.getTo().ordinal()] += depth*depth;
+
+                        for(Move qMove : quietMoves){
+                            if(!qMove.equals(bestMove)) {
+                                boardHelper.historyHeuristic[qMove.getFrom().ordinal()][qMove.getTo().ordinal()] -= depth * depth;
+                            }
+                        }
+
+
+     /*
+                //LMR
+                boolean LMR = moveCounter > 3 && depth > 2 && extension == 0 && !boardHelper.isCapture(board,move);
+                if(LMR){
+                    final int reducedDepth = 1;
+                    childInfo = Search(board, -beta, -alpha, depth - 1 - reducedDepth, ply + 1, timeManager, numExtension + extension);
+                    score = -childInfo.state_value;
+                    if (score > alpha && score < beta){
+                        childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                    }
+                }
+                else{
+                    if(moveCounter == 1){
+                        childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                    }
+                    //Else do a narrow search
+                    else{
+                        childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                        score = -childInfo.state_value;
+                        //If it turns out we found a better move then do a full search
+                        if (score > alpha && score < beta){
+                            childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                            score = -childInfo.state_value;
+                        }
+                    }
+                }
+                 */
