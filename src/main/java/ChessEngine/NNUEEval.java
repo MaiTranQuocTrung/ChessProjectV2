@@ -27,7 +27,7 @@ Efficient updates:
 - Accumulators are only brought up to date when a position is evaluated
  */
 public class NNUEEval {
-    private static final int MATE_SCORE = 5000;
+    //private static final int MATE_SCORE = 5000;
     private static final String NETWORK_FILE = "nnue-768x1024.nnue";
     private static final int MAX_PLY = 1024;
     // Castling switches 2 neurons on and 2 off, the most of any move

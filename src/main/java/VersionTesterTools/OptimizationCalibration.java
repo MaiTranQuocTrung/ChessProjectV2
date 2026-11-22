@@ -6,7 +6,7 @@ import com.github.bhlangonijr.chesslib.move.Move;
 
 /*
     Run:
-    java -XX:StartFlightRecording=duration=60s,filename=C:\Users\ASUS\ChessProjectV2\search.jfr -jar out\artifacts\KingBob_jar\KingBob.jar
+    java -XX:StartFlightRecording=duration=60s,filename=C:\Users\ASUS\ChessProjectV2\search.jfr -jar out\artifacts\OptimTester_jar\KingBob.jar
     jfr view hot-methods search.jfr
  */
 public class OptimizationCalibration {
