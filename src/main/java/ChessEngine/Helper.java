@@ -13,6 +13,14 @@ public class Helper {
     private Move idMove;
     public Move [][] killerMoves = new Move[2][100];
 
+    // check if at least 1 legal move exists
+    public boolean hasLegalMove(Board board) {
+        for (Move move : board.pseudoLegalMoves()) {
+            if (board.doMove(move)) { board.undoMove(); return true; }
+        }
+        return false;
+    }
+
     //fetching iterative deepening move
     public void iterativeDeepeningMove(Move move){
         this.idMove = move;
@@ -38,8 +46,13 @@ public class Helper {
         Piece destinationPiece = board.getPiece(destination);
         // get piece at origin
         Piece originPiece = board.getPiece(origin);
-        // If there is nothing at that destination square
-        return originPiece != Piece.NONE && destinationPiece != Piece.NONE && destinationPiece.getPieceSide() != originPiece.getPieceSide();
+        // Normal capture: an enemy piece on the destination square
+        if (originPiece != Piece.NONE && destinationPiece != Piece.NONE && destinationPiece.getPieceSide() != originPiece.getPieceSide()){
+            return true;
+        }
+        // En passant: a pawn changes file onto an empty square
+        return originPiece != Piece.NONE && originPiece.getPieceType() == PieceType.PAWN
+                && destinationPiece == Piece.NONE && origin.getFile() != destination.getFile();
     }
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
@@ -137,7 +150,7 @@ public class Helper {
         Piece destinationPiece = board.getPiece(destination);
         // Getting the piece type of victim and attacker
         PieceType origin_piece_type = originPiece.getPieceType();
-        PieceType destination_piece_type = destinationPiece.getPieceType();
+        PieceType destination_piece_type = destinationPiece == Piece.NONE ? PieceType.PAWN : destinationPiece.getPieceType();
         // Getting the values of attacker and victim
         int origin_piece_value = simpleEval.pieceWorthMg(origin_piece_type);
         int destination_piece_value = simpleEval.pieceWorthMg(destination_piece_type);

@@ -130,16 +130,21 @@ public class Engine{
         return boardHelper.sortMoves(board,board.pseudoLegalMoves(), TT, ply,false);
     }
 
-
     /*
         Quiescence Search: At cutoff depth go through every non-quiet moves from the cutoff node until
                            there is no more captures, in terms of checks we will handle this under check extensions.
      */
     private int QSearch(Board board, int alpha, int beta, int ply) {
         TOTAL_NODES++;
-
-        if (board.isDraw()) {
+        // new check without the need for 3 fold
+        if (board.getHalfMoveCounter() >= 100 || board.isInsufficientMaterial()) {
             return 0;
+        }
+
+        // mate: in check with no legal move (only checked positions pay for this)
+        boolean inCheck = board.isKingAttacked();
+        if (inCheck && !boardHelper.hasLegalMove(board)) {
+            return -MATE_SCORE + ply;
         }
 
         int stand_pat = nnueEval.positionalEvaluation(board);
@@ -188,7 +193,7 @@ public class Engine{
         }
 
         // Draw detection, not at the root: it has to return a move even if the position occurred before
-        if (ply > 0 && (board.isDraw() || board.isStaleMate() || board.isRepetition(1))) {
+        if (ply > 0 && (board.isDraw())) {
             return new MinimaxInfo(0, null);
         }
         // Checkmate detection
@@ -233,13 +238,13 @@ public class Engine{
                 && !isKingAttacked && boardHelper.nullMovePruning(board)
                 && numExtension == 0){
             nnueEval.doNullMove(board);
-            MinimaxInfo childInfo = Search(board, -beta, beta + 1, depth - R, ply + 1, timeManager, numExtension);
+            MinimaxInfo childInfo = Search(board, -beta, -(beta - 1), depth - R, ply + 1, timeManager, numExtension);
             int score = -childInfo.state_value;
-            Move move = childInfo.move;
+            //Move move = childInfo.move;
             nnueEval.undoMove(board);
             // Beta cutoff, return the score immediately
             if (score >= beta){
-                TT.store(board.getZobristKey(), depth, scoreToTT(score, ply), FLAG.LOWER, move, null);
+                //TT.store(board.getZobristKey(), depth, scoreToTT(score, ply), FLAG.LOWER, move, null);
                 return new MinimaxInfo(score,null);
             }
         }
@@ -310,8 +315,11 @@ public class Engine{
                     /*
                     Storing killer moves based on ply, replacing killer moves by latest beta cutoff
                      */
-                    boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
-                    boardHelper.killerMoves[0][ply] = bestMove;
+                    // check if the best move is already a killer 0
+                    if (!bestMove.equals(boardHelper.killerMoves[0][ply])) {
+                        boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
+                        boardHelper.killerMoves[0][ply] = bestMove;
+                    }
                 }
                 break;
             }
@@ -353,7 +361,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("7k/5b2/3p3K/8/5N2/8/3p3p/6qQ w - - 0 1");
+        //board.loadFromFen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;

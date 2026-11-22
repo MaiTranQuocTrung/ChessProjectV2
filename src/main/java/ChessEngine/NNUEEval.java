@@ -27,7 +27,7 @@ Efficient updates:
 - Accumulators are only brought up to date when a position is evaluated
  */
 public class NNUEEval {
-    private static final int MATE_SCORE = 5000;
+    //private static final int MATE_SCORE = 5000;
     private static final String NETWORK_FILE = "nnue-768x1024.nnue";
     private static final int MAX_PLY = 1024;
     // Castling switches 2 neurons on and 2 off, the most of any move
@@ -57,13 +57,14 @@ public class NNUEEval {
     }
 
     // Use instead of board.doMove(move). Returns false and changes nothing if the move is illegal
-    public boolean doMove(Board board, Move move){
+    public void doMove(Board board, Move move){
         recordMove(board, move);
-        if (board.doMove(move)){
-            return true;
-        }
-        ply--;
-        return false;
+        // no need for full validation this is done by moveGenerator already
+        board.doMove(move, false);
+        /*boolean played = board.doMove(move, false);
+        if (VERIFY && !played){
+            throw new IllegalStateException("Illegal move reached the search: " + move + " in " + board.getFen());
+        }*/
     }
 
     // Use instead of board.doNullMove()
@@ -80,9 +81,9 @@ public class NNUEEval {
 
     // Evaluation in centipawns from the side to move's point of view
     public int positionalEvaluation(Board board){
-        if (board.isMated()){
+        /*if (board.isMated()){
             return -MATE_SCORE;
-        }
+        }*/
         updateAccumulators();
         int us = board.getSideToMove().ordinal();
         int eval = network.forward(accumulators[ply][us], accumulators[ply][us ^ 1]);
