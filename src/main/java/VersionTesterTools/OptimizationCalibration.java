@@ -13,7 +13,7 @@ public class OptimizationCalibration {
     public static void main(String[] args){
         Engine engine = new Engine();
         Board board = new Board();
-        board.loadFromFen("r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2BPP3/2N2N2/PPP2PPP/R1BQK2R w KQ - 0 1");
+        //board.loadFromFen("r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2BPP3/2N2N2/PPP2PPP/R1BQK2R w KQ - 0 1");
         // number of plys
         int ply_num = 15;
         for (int i = 0; i < ply_num; i++){

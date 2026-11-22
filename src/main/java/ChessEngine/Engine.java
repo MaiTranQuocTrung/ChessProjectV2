@@ -142,19 +142,38 @@ public class Engine{
         }
 
         // mate: in check with no legal move (only checked positions pay for this)
-        boolean inCheck = board.isKingAttacked();
+        /*boolean inCheck = board.isKingAttacked();
         if (inCheck && !boardHelper.hasLegalMove(board)) {
             return -MATE_SCORE + ply;
+        }*/
+
+        if (board.isKingAttacked()) {
+            // no legal evasions -> loop never runs -> mate score is returned
+            int bestValue = -MATE_SCORE + ply;
+            for (Move move : moveGenerator(board, false, Math.min(ply, 99))) {
+                nnueEval.doMove(board, move);
+                int score = -QSearch(board, -beta, -alpha, ply + 1);
+                nnueEval.undoMove(board);
+
+                if (score >= beta) {
+                    TOTAL_PRUNES++;
+                    return score;
+                }
+                if (score > bestValue) bestValue = score;
+                if (score > alpha) alpha = score;
+            }
+            return bestValue;
         }
 
         int stand_pat = nnueEval.positionalEvaluation(board);
         int bestValue = stand_pat;
 
+        // position's too good teh opponent won't play this so cutoff
         if (stand_pat >= beta) {
             TOTAL_PRUNES++;
             return stand_pat;
         }
-
+        // A capture only matters if it beats alpha (update alpha based on standpat)
         if (alpha < stand_pat) {
             alpha = stand_pat;
         }
@@ -361,7 +380,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
+        //board.loadFromFen("r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;
