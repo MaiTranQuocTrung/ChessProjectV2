@@ -55,32 +55,8 @@ public class Helper {
                 && destinationPiece == Piece.NONE && origin.getFile() != destination.getFile();
     }
 
-    // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
-    /*public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply, boolean qSearch){
-        List<MoveInfo> moveScores = new ArrayList<>();
-        List<Move> sortedMoves = new ArrayList<>();
-
-        for (Move move : legalMoves){
-            if(!board.doMove(move)){continue;}
-            board.undoMove();
-            MoveInfo moveInfo;
-            if(qSearch){
-                moveInfo = new MoveInfo(move, calculateCaptureMoveValue(board, move, transpositionTable));
-            }
-            else {
-                moveInfo = new MoveInfo(move, calculateMoveValue(board, move, transpositionTable, ply));
-            }
-            moveScores.add(moveInfo);
-        }
-
-        // sort by biggest to smallest
-        moveScores.sort((a,b) -> b.value - a.value);
-        for (MoveInfo move_info : moveScores) {
-            sortedMoves.add(move_info.move);
-        }
-        return sortedMoves;
-    }*/
     public List<Move> sortMoves(Board board, List<Move> moves, TranspositionTable tt, int ply, boolean qSearch){
+        // legality check moved to search for efficiency (pruning doesn't search all of the moves in sortMoves)
         List<MoveInfo> moveScores = new ArrayList<>(moves.size());
         for (Move move : moves){
             int value = qSearch ? calculateCaptureMoveValue(board, move, tt)
