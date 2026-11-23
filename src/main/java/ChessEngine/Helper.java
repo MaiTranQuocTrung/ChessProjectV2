@@ -56,7 +56,7 @@ public class Helper {
     }
 
     // Sorting by MVV-LVA, TT moves, checks, promotions and previous move from ID
-    public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply, boolean qSearch){
+    /*public List<Move> sortMoves(Board board, List<Move> legalMoves, TranspositionTable transpositionTable, int ply, boolean qSearch){
         List<MoveInfo> moveScores = new ArrayList<>();
         List<Move> sortedMoves = new ArrayList<>();
 
@@ -79,6 +79,18 @@ public class Helper {
             sortedMoves.add(move_info.move);
         }
         return sortedMoves;
+    }*/
+    public List<Move> sortMoves(Board board, List<Move> moves, TranspositionTable tt, int ply, boolean qSearch){
+        List<MoveInfo> moveScores = new ArrayList<>(moves.size());
+        for (Move move : moves){
+            int value = qSearch ? calculateCaptureMoveValue(board, move, tt)
+                    : calculateMoveValue(board, move, tt, ply);
+            moveScores.add(new MoveInfo(move, value));
+        }
+        moveScores.sort((a, b) -> b.value - a.value);
+        List<Move> sorted = new ArrayList<>(moveScores.size());
+        for (MoveInfo mi : moveScores) sorted.add(mi.move);
+        return sorted;
     }
 
     // Calculating the value of each moves according to MVV-LVA but checking TT moves first + valuing promotions and checks

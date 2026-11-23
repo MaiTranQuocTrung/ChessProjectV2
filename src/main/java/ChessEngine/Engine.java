@@ -151,6 +151,7 @@ public class Engine{
             // no legal evasions -> loop never runs -> mate score is returned
             int bestValue = -MATE_SCORE + ply;
             for (Move move : moveGenerator(board, false, Math.min(ply, 99))) {
+                if (!board.isMoveLegal(move, true)) continue;
                 nnueEval.doMove(board, move);
                 int score = -QSearch(board, -beta, -alpha, ply + 1);
                 nnueEval.undoMove(board);
@@ -179,6 +180,7 @@ public class Engine{
         }
 
         for (Move move : moveGenerator(board, true, ply)) {
+            if (!board.isMoveLegal(move, true)) continue;
             nnueEval.doMove(board, move);
             int score = -QSearch(board, -beta, -alpha, ply + 1);
             nnueEval.undoMove(board);
@@ -272,12 +274,15 @@ public class Engine{
         int moveCounter = 0;
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
+        boolean anyLegal = false;
 
         //Calculated line
         List<Move> bestLine = new ArrayList<>();
 
         // Main search loop
         for (Move move : moveGenerator(board, false, ply)) {
+            if (!board.isMoveLegal(move, true)) continue;
+            anyLegal = true;
             nnueEval.doMove(board, move);
             /*
              Move extension:
@@ -342,6 +347,9 @@ public class Engine{
                 }
                 break;
             }
+        }
+        if (!anyLegal) {
+            return new MinimaxInfo(isKingAttacked ? -MATE_SCORE + ply : 0, null);
         }
         // Store position in transposition table
         FLAG flag;
