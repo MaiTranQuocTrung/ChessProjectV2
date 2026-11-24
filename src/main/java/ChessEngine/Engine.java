@@ -1,5 +1,6 @@
 package ChessEngine;
 import com.github.bhlangonijr.chesslib.Board;
+import com.github.bhlangonijr.chesslib.Piece;
 import com.github.bhlangonijr.chesslib.move.Move;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,6 +60,8 @@ public class Engine{
     }
 
     public void newGame(){
+        boardHelper.clearHistory();
+        boardHelper.clearKillers();
         TT.clear();
     }
 
@@ -275,6 +278,11 @@ public class Engine{
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
         boolean anyLegal = false;
+        int originalAlpha = alpha;
+
+        // history heuristics quiet track
+        Move[] quietsTried = new Move[64];
+        int quietCount = 0;
 
         //Calculated line
         List<Move> bestLine = new ArrayList<>();
@@ -283,6 +291,7 @@ public class Engine{
         for (Move move : moveGenerator(board, false, ply)) {
             if (!board.isMoveLegal(move, true)) continue;
             anyLegal = true;
+            boolean isQuiet = !boardHelper.isCapture(board, move) && move.getPromotion() == Piece.NONE;
             nnueEval.doMove(board, move);
             /*
              Move extension:
@@ -334,28 +343,41 @@ public class Engine{
             // Beta cutoff, the tree is pruned, no further nodes will be explored
             if (score >= beta) {
                 TOTAL_PRUNES++;
-                // Killer Move is a quiet move which caused a beta-cutoff
-                if (bestMove != null && !boardHelper.isCapture(board, bestMove)){
+                // add history heuristics here
+                if (isQuiet) {
+                    int side = board.getSideToMove().ordinal();
+                    int bonus = Math.min(depth * depth, 6000);
+                    boardHelper.updateHistory(side, move, bonus);
+
+                    // malus for quiets that were tried and failed
+                    for (int i = 0; i < quietCount; i++) {
+                        boardHelper.updateHistory(side, quietsTried[i], -bonus);
+                    }
+
                     /*
                     Storing killer moves based on ply, replacing killer moves by latest beta cutoff
                      */
-                    // check if the best move is already a killer 0
-                    if (!bestMove.equals(boardHelper.killerMoves[0][ply])) {
+                    if (!move.equals(boardHelper.killerMoves[0][ply])) {
                         boardHelper.killerMoves[1][ply] = boardHelper.killerMoves[0][ply];
-                        boardHelper.killerMoves[0][ply] = bestMove;
+                        boardHelper.killerMoves[0][ply] = move;
                     }
+
                 }
                 break;
             }
+            if (isQuiet && quietCount < quietsTried.length) {
+                quietsTried[quietCount++] = move;
+            }
         }
         if (!anyLegal) {
+            // if there is no more legal moves then either if check = mate, else stalemate
             return new MinimaxInfo(isKingAttacked ? -MATE_SCORE + ply : 0, null);
         }
         // Store position in transposition table
         FLAG flag;
         if (bestValue >= beta) {
             flag = FLAG.LOWER;
-        } else if (bestValue > alpha) {
+        } else if (bestValue > originalAlpha) {
             flag = FLAG.EXACT;
         } else {
             flag = FLAG.UPPER;
@@ -388,7 +410,7 @@ public class Engine{
 
     public static void main(String[] args){
         Board board = new Board();
-        //board.loadFromFen("r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1");
+        //board.loadFromFen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2");
         Engine myEngine = new Engine();
 
         MinimaxInfo engine_choice;

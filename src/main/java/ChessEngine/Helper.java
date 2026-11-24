@@ -12,18 +12,18 @@ public class Helper {
     SimpleEval simpleEval = new SimpleEval();
     private Move idMove;
     public Move [][] killerMoves = new Move[2][100];
-
-    // check if at least 1 legal move exists
-    public boolean hasLegalMove(Board board) {
-        for (Move move : board.pseudoLegalMoves()) {
-            if (board.doMove(move)) { board.undoMove(); return true; }
-        }
-        return false;
-    }
-
+    // History heuristic
+    public final int[][][] history = new int[2][64][64];
     //fetching iterative deepening move
     public void iterativeDeepeningMove(Move move){
         this.idMove = move;
+    }
+
+    //history h
+    public void updateHistory(int side, Move m, int bonus) {
+        int from = m.getFrom().ordinal(), to = m.getTo().ordinal();
+        int h = history[side][from][to];
+        history[side][from][to] = h + bonus - h * Math.abs(bonus) / 6000;
     }
 
     //Null move pruning
@@ -72,8 +72,8 @@ public class Helper {
     // Calculating the value of each moves according to MVV-LVA but checking TT moves first + valuing promotions and checks
     //Ordering scheme as such ID Move > TT move > MVV-LVA > Promotion > Killer 1 > Killer 2 > PST
     private int calculateMoveValue(Board board, Move move, TranspositionTable transpositionTable, int ply){
-        //ID value should always be looked at first but only at root node
 
+        //ID value should always be looked at first but only at root node
         if (ply == 0 && move.equals(idMove)) {
             return 60000;
         }
@@ -99,13 +99,16 @@ public class Helper {
             int quietScore = 0;
             //Killer moves
             if (killerMoves[0][ply] != null && move.equals(killerMoves[0][ply])) {
-                quietScore = 9000;
+                //quietScore = 9000;
+                return 9000;
             }
 
             if (killerMoves[1][ply] != null && move.equals(killerMoves[1][ply])) {
-                quietScore = 7000;
+                //quietScore = 7000;
+                return 7000;
             }
-            quietScore += PST(board, move);
+            quietScore = PST(board, move) + history[board.getSideToMove().ordinal()]
+                    [move.getFrom().ordinal()][move.getTo().ordinal()];
             return quietScore;
         }
     }
@@ -187,6 +190,19 @@ public class Helper {
             };
         }
         return value;
+    }
+
+    //clear history
+    public void clearHistory() {
+        for (int s = 0; s < 2; s++)
+            for (int f = 0; f < 64; f++)
+                java.util.Arrays.fill(history[s][f], 0);
+    }
+
+    // clear killers
+    public void clearKillers() {
+        for (int i = 0; i < 2; i++)
+            java.util.Arrays.fill(killerMoves[i], null);
     }
 
 
