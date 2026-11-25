@@ -278,7 +278,6 @@ public class Engine{
         int bestValue = -Integer.MAX_VALUE;
         Move bestMove = null;
         boolean anyLegal = false;
-        int originalAlpha = alpha;
 
         // history heuristics quiet track
         Move[] quietsTried = new Move[64];
@@ -377,7 +376,7 @@ public class Engine{
         FLAG flag;
         if (bestValue >= beta) {
             flag = FLAG.LOWER;
-        } else if (bestValue > originalAlpha) {
+        } else if (bestValue > alpha) {
             flag = FLAG.EXACT;
         } else {
             flag = FLAG.UPPER;
