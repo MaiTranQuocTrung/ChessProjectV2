@@ -1,6 +1,7 @@
 package ChessEngine;
 import com.github.bhlangonijr.chesslib.Board;
 import com.github.bhlangonijr.chesslib.Piece;
+import com.github.bhlangonijr.chesslib.PieceType;
 import com.github.bhlangonijr.chesslib.move.Move;
 import java.time.Duration;
 import java.time.Instant;
@@ -235,7 +236,7 @@ public class Engine{
             // Adjust the bestValue based on the flag
             if (entry.flag == FLAG.EXACT) {
                 return new MinimaxInfo(entryValue, entryMove, entryLine, entryDepth);
-            } else if (entry.flag == FLAG.LOWER && entryValue > beta) {
+            } else if (entry.flag == FLAG.LOWER && entryValue >= beta) {
                 return new MinimaxInfo(entryValue, entryMove, entryLine, entryDepth);
             } else if (entry.flag == FLAG.UPPER && entryValue <= alpha) {
                 return new MinimaxInfo(entryValue, entryMove, entryLine, entryDepth);
@@ -290,8 +291,15 @@ public class Engine{
         for (Move move : moveGenerator(board, false, ply)) {
             if (!board.isMoveLegal(move, true)) continue;
             anyLegal = true;
+            // check move type
             boolean isQuiet = !boardHelper.isCapture(board, move) && move.getPromotion() == Piece.NONE;
+            boolean isPawnMove = board.getPiece(move.getFrom()).getPieceType() == PieceType.PAWN;
+
             nnueEval.doMove(board, move);
+
+            // is the move a checking one
+            boolean givesCheck = board.isKingAttacked();
+
             /*
              Move extension:
              If our king is under attack extend the search by +1 depth but we shouldn't extend pass 16 ply because of time
@@ -310,11 +318,36 @@ public class Engine{
                 childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
                 score = -childInfo.state_value;
             }
-            //Else do a narrow search
+            //Else do a narrow search + LMR
             else{
-                childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                int reduction = 0;
+                /*
+                    Reduce when:
+                    - depth >= 3
+                    - Not in check
+                    - Not pawn move
+                    - Is quiet move
+                    - Moves that does not give check
+                    - Not PV node, so null window node
+
+                 */
+                if (depth >=3 && !isKingAttacked && isQuiet && !isPawnMove
+                        && !givesCheck && beta - alpha == 1){
+                    // Use ethereal's: 0.99 + ln(depth) * ln(moves) / 3.14
+                    reduction = (int) (0.75 + Math.log(depth) * Math.log(moveCounter) / 2.25);
+                    reduction = Math.clamp(reduction, 0, depth - 2);
+                }
+                childInfo = Search(board, - alpha - 1, -alpha, depth - 1 + extension - reduction, ply + 1, timeManager, numExtension + extension);
                 score = -childInfo.state_value;
+
+                // safety for LMR, if better than our best move at this branch and reduction is still happening, stop that
+                if (score > alpha && reduction > 0) {
+                    childInfo = Search(board, -alpha - 1, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
+                    score = -childInfo.state_value;
+                }
                 //If it turns out we found a better move then do a full search
+                // > alpha = better than our best in the current search branch
+                // < beta = not good enough for a cutoff yet
                 if (score > alpha && score < beta){
                     childInfo = Search(board, -beta, -alpha, depth - 1 + extension, ply + 1, timeManager, numExtension + extension);
                     score = -childInfo.state_value;
